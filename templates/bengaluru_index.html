@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bengaluru Metro Journey Planner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .input-section {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        .find-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .find-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .find-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results-section {
+            padding: 40px;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .route-type {
+            margin-bottom: 40px;
+        }
+
+        .route-type h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .route-type h2::before {
+            content: '';
+            width: 4px;
+            height: 25px;
+            background: #4CAF50;
+            margin-right: 15px;
+            border-radius: 2px;
+        }
+
+        .route-card {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease;
+        }
+
+        .route-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .route-card.suggested {
+            border: 2px solid #4CAF50;
+            background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+        }
+
+        .route-card.not-suggested {
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            opacity: 0.8;
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .route-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .route-icon {
+            font-size: 1.4rem;
+        }
+
+        .route-score {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .time-icon {
+            font-size: 1rem;
+        }
+
+        .route-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .route-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #c33;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #363;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #363;
+            margin-bottom: 20px;
+        }
+
+        .route-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .preview-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .preview-btn:hover {
+            background: #388E3C;
+        }
+
+        /* Error Notification Styles */
+        .error-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff4444;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            max-width: 400px;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .error-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-icon {
+            font-size: 20px;
+        }
+
+        .error-message {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .error-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Preview Modal Styles */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .preview-modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .preview-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+        }
+
+        .preview-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .preview-close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .preview-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .preview-body {
+            padding: 25px;
+        }
+
+        .route-summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .origin-dest {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .origin-dest span:first-child {
+            color: #4CAF50;
+        }
+
+        .origin-dest span:last-child {
+            color: #2E7D32;
+        }
+
+        .total-info {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .total-info span {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .legs-container {
+            margin-bottom: 25px;
+        }
+
+        .leg-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .leg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .leg-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .change-btn {
+            background: #6c757d;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .change-btn:hover {
+            background: #5a6268;
+        }
+
+        .leg-route {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .leg-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .leg-cost {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        .leg-time {
+            color: #666;
+        }
+
+        .metro-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .booking-actions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .ticket-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .book-metro-btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: 100%;
+        }
+
+        .book-metro-btn:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .input-section,
+            .results-section {
+                padding: 20px;
+            }
+
+            .route-details {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-modal-content {
+                width: 95%;
+                margin: 2% auto;
+            }
+
+            .preview-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .preview-body {
+                padding: 20px;
+            }
+
+            .total-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .leg-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .leg-details {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚇 Bengaluru Metro Journey Planner</h1>
+            <p>Find the best multi-modal routes combining taxi and metro</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label for="initial-address">📍 Starting Address</label>
+                <input type="text" id="initial-address" placeholder="Enter your starting address...">
+            </div>
+
+            <div class="input-group">
+                <label for="dest-address">🎯 Destination Address</label>
+                <input type="text" id="dest-address" placeholder="Enter your destination address...">
+            </div>
+
+            <button class="find-button" id="find-routes-btn" onclick="findRoutes()">
+                🚀 Find Best Routes
+            </button>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="loading-text">🚇 Finding the best metro routes...</div>
+                <div class="spinner"></div>
+                <p>This may take a few moments while we calculate taxi legs and metro connections.</p>
+            </div>
+        </div>
+
+        <div class="results-section" id="results-section">
+            <div class="route-type" id="direct-taxi-section" style="display: none;">
+                <h2>🚕 Direct Taxi Suggestion</h2>
+                <div id="direct-taxi-card"></div>
+            </div>
+            <div class="route-type">
+                <h2>🏆 Top 5 Convenience Routes</h2>
+                <div id="convenience-routes"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="preview-modal">
+        <div class="preview-modal-content">
+            <div class="preview-header">
+                <span class="preview-close" onclick="closePreview()">&times;</span>
+                <h2>🚇 Namma Metro</h2>
+            </div>
+            <div class="preview-body">
+                <div class="route-summary">
+                    <div class="origin-dest">
+                        <span id="preview-origin">Origin</span>
+                        <span>→</span>
+                        <span id="preview-dest">Destination</span>
+                    </div>
+                    <div class="total-info">
+                        <span id="preview-total-cost">💰 Total: ₹0</span>
+                        <span id="preview-total-time">⏱️ 0 mins</span>
+                    </div>
+                </div>
+
+                <div class="legs-container">
+                    <!-- Taxi Leg 1 -->
+                    <div class="leg-card">
+                        <div class="leg-header">
+                            <span class="leg-title">🚗 Taxi | <span id="preview-taxi1-distance">0</span> km</span>
+                            <button class="change-btn">Change ></button>
+                        </div>
+                        <div class="leg-route" id="preview-taxi1-route">
+                            Origin → Station
+                        </div>
+                        <div class="leg-details">
+                            <span class="leg-cost" id="preview-taxi1-cost">₹0</span>
+                            <span class="leg-time" id="preview-taxi1-time">0 min</span>
+                        </div>
+                    </div>
+
+                    <!-- Metro Leg -->
+                    <div class="leg-card">
+                        <div class="leg-header">
+                            <span class="leg-title">🚇 Metro | <span id="preview-metro-line">Line</span></span>
+                            <button class="change-btn">Change ></button>
+                        </div>
+                        <div class="leg-route" id="preview-metro-route">
+                            Station → Station
+                        </div>
+                        <div class="leg-details">
+                            <span class="leg-cost" id="preview-metro-cost">₹0</span>
+                            <span class="leg-time" id="preview-metro-time">0 min</span>
+                        </div>
+                        <div class="metro-info" id="preview-metro-info">
+                            Metro line information
+                        </div>
+                    </div>
+
+                    <!-- Taxi Leg 2 -->
+                    <div class="leg-card">
+                        <div class="leg-header">
+                            <span class="leg-title">🚗 Taxi | <span id="preview-taxi2-distance">0</span> km</span>
+                            <button class="change-btn">Change ></button>
+                        </div>
+                        <div class="leg-route" id="preview-taxi2-route">
+                            Station → Destination
+                        </div>
+                        <div class="leg-details">
+                            <span class="leg-cost" id="preview-taxi2-cost">₹0</span>
+                            <span class="leg-time" id="preview-taxi2-time">0 min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="booking-actions">
+                    <div class="ticket-info">
+                        <span>📋 Ticket payment information</span>
+                        <span>01 Ticket ></span>
+                    </div>
+                    <button class="book-metro-btn" id="preview-book-metro-btn">
+                        🎫 Book Metro @ ₹0
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autocompleteInitial, autocompleteDest;
+
+        // Initialize Google Places Autocomplete
+        function initAutocomplete() {
+            try {
+                const initialInput = document.getElementById('initial-address');
+                const destInput = document.getElementById('dest-address');
+
+                // Initialize autocomplete for both inputs
+                autocompleteInitial = new google.maps.places.Autocomplete(initialInput, {
+                    componentRestrictions: { country: 'IN' }
+                });
+
+                autocompleteDest = new google.maps.places.Autocomplete(destInput, {
+                    componentRestrictions: { country: 'IN' }
+                });
+
+                // Add place change listeners to capture coordinates
+                autocompleteInitial.addListener('place_changed', function () {
+                    const place = autocompleteInitial.getPlace();
+                    if (place.geometry) {
+                        window.initialCoords = {
+                            lat: place.geometry.location.lat(),
+                            lng: place.geometry.location.lng(),
+                            address: place.formatted_address
+                        };
+                        console.log('Initial place selected:', window.initialCoords);
+                    }
+                });
+
+                autocompleteDest.addListener('place_changed', function () {
+                    const place = autocompleteDest.getPlace();
+                    if (place.geometry) {
+                        window.destCoords = {
+                            lat: place.geometry.location.lat(),
+                            lng: place.geometry.location.lng(),
+                            address: place.formatted_address
+                        };
+                        console.log('Destination place selected:', window.destCoords);
+                    }
+                });
+
+                console.log('Google Places Autocomplete initialized with coordinate capture');
+            } catch (error) {
+                console.error('Error initializing Google Places Autocomplete:', error);
+                const inputs = document.querySelectorAll('#initial-address, #dest-address');
+                inputs.forEach(input => {
+                    input.placeholder = 'Enter address manually';
+                });
+            }
+        }
+
+        async function findRoutes() {
+            // Check if we have coordinates from autocomplete
+            if (!window.initialCoords || !window.destCoords) {
+                showError('Please select addresses from the suggestions. Type and click on a suggestion to select it.');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results-section');
+            // Use the correct button id; fallback to class if needed
+            const findButton = document.getElementById('find-routes-btn') || document.querySelector('.find-button');
+
+            // Show loading state
+            loading.style.display = 'block';
+            results.classList.remove('show');
+            if (findButton) {
+                findButton.disabled = true;
+                findButton.textContent = 'Finding Routes...';
+            }
+
+            // Send coordinates directly to backend
+            fetch('/find_routes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    initial_lat: window.initialCoords.lat,
+                    initial_lng: window.initialCoords.lng,
+                    initial_address: window.initialCoords.address,
+                    dest_lat: window.destCoords.lat,
+                    dest_lng: window.destCoords.lng,
+                    dest_address: window.destCoords.address
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    loading.style.display = 'none';
+                    if (findButton) {
+                        findButton.disabled = false;
+                        findButton.textContent = 'Find Routes';
+                    }
+
+                    if (data.error) {
+                        showError('Error: ' + data.error);
+                    } else if (!data.convenience_routes || data.convenience_routes.length === 0) {
+                        showError('No routes found. Please try different locations.');
+                    } else {
+                        displayResults(data);
+                        results.classList.add('show');
+                        // Scroll to results
+                        results.scrollIntoView({ behavior: 'smooth' });
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    if (findButton) {
+                        findButton.disabled = false;
+                        findButton.textContent = 'Find Routes';
+                    }
+                    console.error('Error:', error);
+                    showError('An error occurred while calculating the route. Please check your internet connection and try again.');
+                });
+        }
+
+        function displayResults(data) {
+            const convenienceContainer = document.getElementById('convenience-routes');
+            const directTaxiSection = document.getElementById('direct-taxi-section');
+            const directTaxiCard = document.getElementById('direct-taxi-card');
+
+            // Check if containers exist
+            if (!convenienceContainer || !directTaxiSection || !directTaxiCard) {
+                console.error('Required containers not found');
+                showError('Error: Page elements not found. Please refresh the page.');
+                return;
+            }
+
+            // Reset containers before displaying new results
+            convenienceContainer.innerHTML = '';
+            directTaxiCard.innerHTML = '';
+
+            // Check if data exists and has required properties
+            if (!data || !data.convenience_routes) {
+                console.error('Invalid data structure:', data);
+                showError('Invalid data received from server. Please try again.');
+                return;
+            }
+
+            // Display direct taxi suggestion if available
+            if (data.direct_taxi_suggestion) {
+                displayDirectTaxiSuggestion(data.direct_taxi_suggestion);
+                directTaxiSection.style.display = 'block';
+            } else {
+                directTaxiSection.style.display = 'none';
+            }
+
+            // Get the addresses from the input fields
+            const initialAddress = document.getElementById('initial-address').value.trim();
+            const destAddress = document.getElementById('dest-address').value.trim();
+
+            // Display convenience routes
+            convenienceContainer.innerHTML = data.convenience_routes.map((route, index) => {
+                try {
+                    // Safely access route properties with fallbacks
+                    const safeRoute = {
+                        initial: route.initial || 'Unknown',
+                        destination: route.destination || 'Unknown',
+                        total_journey_time: route.total_journey_time || 0,
+                        total_access_distance: route.total_access_distance || 0,
+                        metro_distance: route.metro_distance || 0,
+                        total_access_time: route.total_access_time || 0,
+                        metro_time: route.metro_time || 0,
+                        metro_interchange_time: route.metro_interchange_time || 0,
+                        access_metro_interchange_time: route.access_metro_interchange_time || 0,
+                        same_line: route.same_line || false,
+                        interchange: route.interchange || '',
+                        initial_line: route.initial_line || 'Unknown',
+                        dest_line: route.dest_line || 'Unknown',
+                        transfer_count: route.transfer_count || 0,
+                        // Add missing properties for preview
+                        leg1_distance: route.leg1_distance || (route.total_access_distance / 2),
+                        leg2_distance: route.leg2_distance || (route.total_access_distance / 2),
+                        leg1_mode: route.leg1_mode || 'taxi',
+                        leg2_mode: route.leg2_mode || 'taxi',
+                        leg1_time: route.leg1_time || (route.total_access_time / 2),
+                        leg2_time: route.leg2_time || (route.total_access_time / 2)
+                    };
+
+                    // Format route info based on transfer count
+                    let routeInfo = '';
+                    if (safeRoute.same_line) {
+                        routeInfo = `Same Line (${safeRoute.initial_line})`;
+                    } else if (safeRoute.transfer_count === 2) {
+                        // Parse enhanced interchange info for double transfers
+                        const interchangeParts = safeRoute.interchange.split('|');
+                        if (interchangeParts.length > 1) {
+                            const lineSequence = interchangeParts[0];
+                            routeInfo = `Double Transfer: ${lineSequence}`;
+                        } else {
+                            routeInfo = `Double Transfer: ${safeRoute.interchange}`;
+                        }
+                    } else if (safeRoute.transfer_count === 1) {
+                        routeInfo = `Single Transfer: ${safeRoute.interchange}`;
+                    } else {
+                        routeInfo = `Different Lines (${safeRoute.initial_line} → ${safeRoute.dest_line})`;
+                    }
+
+                    // Get route type icon
+                    let routeIcon = '🚇';
+                    if (safeRoute.same_line) {
+                        routeIcon = '🟣';
+                    } else if (safeRoute.transfer_count === 1) {
+                        routeIcon = '🔄';
+                    } else if (safeRoute.transfer_count === 2) {
+                        routeIcon = '🔄🔄';
+                    }
+
+                    return `
+                        <div class="route-card">
+                            <div class="route-header">
+                                <div class="route-title">
+                                    <span class="route-icon">${routeIcon}</span>
+                                    ${index + 1}. ${safeRoute.initial} → ${safeRoute.destination}
+                                </div>
+                                <div class="route-score">
+                                    <span class="time-icon">⏱️</span>
+                                    ${safeRoute.total_journey_time.toFixed(1)} min
+                                </div>
+                            </div>
+                            <div class="route-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">🚶🚗 Access Distance</div>
+                                    <div class="detail-value">${safeRoute.total_access_distance.toFixed(1)} km</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">🚇 Metro Distance</div>
+                                    <div class="detail-value">${safeRoute.metro_distance.toFixed(1)} km</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">⏱️ Total Time</div>
+                                    <div class="detail-value">${safeRoute.total_journey_time.toFixed(1)} min</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">🔄 Transfers</div>
+                                    <div class="detail-value">${safeRoute.transfer_count}</div>
+                                </div>
+                            </div>
+                            <div class="route-info">
+                                <strong>Route:</strong> ${routeInfo}
+                            </div>
+                            <div class="route-info">
+                                <strong>Access:</strong> ${safeRoute.leg1_distance.toFixed(1)} km ${safeRoute.leg1_mode === 'walking' ? '🚶' : '🚗'} + ${safeRoute.leg2_distance.toFixed(1)} km ${safeRoute.leg2_mode === 'walking' ? '🚶' : '🚗'}
+                            </div>
+                            <div class="route-actions">
+                                <button class="preview-btn" onclick="showPreview(${JSON.stringify(safeRoute).replace(/"/g, '&quot;')}, '${initialAddress}', '${destAddress}')">
+                                    👁️ Preview Details
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error processing route:', route, error);
+                    return `
+                        <div class="route-card error">
+                            <div class="route-header">
+                                <div class="route-title">${index + 1}. Error processing route</div>
+                            </div>
+                            <div class="route-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">Error</div>
+                                    <div class="detail-value">Failed to display route data</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function displayDirectTaxiSuggestion(directTaxiData) {
+            const directTaxiCard = document.getElementById('direct-taxi-card');
+
+            if (!directTaxiData) {
+                directTaxiCard.innerHTML = '';
+                return;
+            }
+
+            const isSuggested = directTaxiData.suggest;
+            const directDistance = directTaxiData.direct_distance || 0;
+            const directTime = directTaxiData.direct_time || 0;
+            const timeSaving = directTaxiData.time_saving || 0;
+            const reasons = directTaxiData.reasons || [];
+
+            // Get the addresses from the input fields
+            const initialAddress = document.getElementById('initial-address').value.trim();
+            const destAddress = document.getElementById('dest-address').value.trim();
+
+            let cardClass = 'route-card';
+            let suggestionText = '';
+            let reasonsHtml = '';
+
+            if (isSuggested) {
+                cardClass += ' suggested';
+                suggestionText = '🎯 RECOMMENDED';
+                if (reasons.length > 0) {
+                    reasonsHtml = `
+                        <div class="route-info">
+                            <strong>Why Direct Taxi:</strong>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                ${reasons.map(reason => `<li>${reason}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            } else {
+                cardClass += ' not-suggested';
+                suggestionText = 'ℹ️ NOT RECOMMENDED';
+                reasonsHtml = `
+                    <div class="route-info">
+                        <strong>Note:</strong> Direct taxi may not be the best option for this route. Consider the multimodal options below.
+                    </div>
+                `;
+            }
+
+            directTaxiCard.innerHTML = `
+                <div class="${cardClass}">
+                    <div class="route-header">
+                        <div class="route-title">
+                            <span class="route-icon">🚕</span>
+                            Direct Taxi Route
+                            <span style="margin-left: 10px; font-size: 0.9rem; color: ${isSuggested ? '#4CAF50' : '#666'};">
+                                ${suggestionText}
+                            </span>
+                        </div>
+                        <div class="route-score">
+                            <span class="time-icon">⏱️</span>
+                            ${directTime.toFixed(1)} min
+                        </div>
+                    </div>
+                    <div class="route-details">
+                        <div class="detail-item">
+                            <div class="detail-label">🚗 Distance</div>
+                            <div class="detail-value">${directDistance.toFixed(1)} km</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">⏱️ Time</div>
+                            <div class="detail-value">${directTime.toFixed(1)} min</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">💰 Estimated Cost</div>
+                            <div class="detail-value">₹${Math.round(directDistance * 12)}</div>
+                        </div>
+                        ${timeSaving > 0 ? `
+                        <div class="detail-item">
+                            <div class="detail-label">⚡ Time Saved</div>
+                            <div class="detail-value">${timeSaving.toFixed(1)} min</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="route-info">
+                        <strong>Route:</strong> ${initialAddress} → ${destAddress}
+                    </div>
+                    ${reasonsHtml}
+                    <div class="route-actions">
+                        <button class="preview-btn" onclick="showDirectTaxiPreview('${initialAddress}', '${destAddress}', ${directDistance}, ${directTime})">
+                            👁️ Preview Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showDirectTaxiPreview(initialAddress, destAddress, distance, time) {
+            // Create a simple preview for direct taxi
+            const modal = document.getElementById('preview-modal');
+            const modalContent = modal.querySelector('.preview-modal-content');
+
+            modalContent.innerHTML = `
+                <div class="preview-header">
+                    <span class="preview-close" onclick="closePreview()">&times;</span>
+                    <h2>🚕 Direct Taxi Route</h2>
+                </div>
+                <div class="preview-body">
+                    <div class="route-summary">
+                        <div class="origin-dest">
+                            <span>${initialAddress}</span>
+                            <span>→</span>
+                            <span>${destAddress}</span>
+                        </div>
+                        <div class="total-info">
+                            <span>💰 Total: ₹${Math.round(distance * 12)}</span>
+                            <span>⏱️ ${time.toFixed(1)} mins</span>
+                        </div>
+                    </div>
+                    <div class="legs-container">
+                        <div class="leg-card">
+                            <div class="leg-header">
+                                <span class="leg-title">🚗 Direct Taxi | ${distance.toFixed(1)} km</span>
+                            </div>
+                            <div class="leg-route">
+                                ${initialAddress} → ${destAddress}
+                            </div>
+                            <div class="leg-details">
+                                <span class="leg-cost">₹${Math.round(distance * 12)}</span>
+                                <span class="leg-time">${time.toFixed(1)} min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.style.display = 'block';
+        }
+
+        function showError(message) {
+            // Create error notification
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-notification';
+            errorDiv.innerHTML = `
+                <div class="error-content">
+                    <span class="error-icon">⚠️</span>
+                    <span class="error-message">${message}</span>
+                    <button class="error-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            `;
+
+            // Add to page
+            document.body.appendChild(errorDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (errorDiv.parentElement) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+
+        function showPreview(route, initialAddress, destAddress) {
+            // Validate route data
+            if (!route || !route.leg1_distance || !route.leg2_distance || !route.metro_distance) {
+                console.error('Invalid route data for preview:', route);
+                showError('Cannot show preview: Route data is incomplete');
+                return;
+            }
+
+            // Calculate costs based on route data
+            const leg1Cost = route.leg1_mode === 'walking' ? 0 : calculateTaxiCost(route.leg1_distance);
+            const leg2Cost = route.leg2_mode === 'walking' ? 0 : calculateTaxiCost(route.leg2_distance);
+            const metroCost = calculateMetroCost(route.metro_distance);
+            const totalCost = leg1Cost + metroCost + leg2Cost;
+
+            // Update route summary
+            document.getElementById('preview-origin').textContent = initialAddress;
+            document.getElementById('preview-dest').textContent = destAddress;
+            document.getElementById('preview-total-cost').textContent = `💰 Total: ₹${totalCost}`;
+            document.getElementById('preview-total-time').textContent = `⏱️ ${route.total_journey_time.toFixed(1)} mins`;
+
+            // Update Access Leg 1
+            const leg1Icon = route.leg1_mode === 'walking' ? '🚶' : '🚗';
+            const leg1ModeText = route.leg1_mode === 'walking' ? 'Walking' : 'Taxi';
+            document.getElementById('preview-taxi1-distance').textContent = route.leg1_distance.toFixed(1);
+            document.getElementById('preview-taxi1-cost').textContent = `₹${leg1Cost}`;
+            document.getElementById('preview-taxi1-time').textContent = `${route.leg1_time} min`;
+            document.getElementById('preview-taxi1-route').textContent = `${initialAddress} → ${route.initial} ${leg1Icon}`;
+
+            // Update Metro Leg
+            document.getElementById('preview-metro-line').textContent = route.initial_line;
+            document.getElementById('preview-metro-cost').textContent = `₹${metroCost}`;
+            document.getElementById('preview-metro-time').textContent = `${route.metro_time} min`;
+            document.getElementById('preview-metro-route').textContent = `${route.initial} → ${route.destination}`;
+
+            // Update metro info based on transfer count
+            if (route.same_line) {
+                document.getElementById('preview-metro-info').textContent = `Same Line (${route.initial_line}) - No interchange required`;
+            } else if (route.transfer_count === 2) {
+                const interchangeParts = route.interchange.split('|');
+                if (interchangeParts.length > 1) {
+                    const lineSequence = interchangeParts[0];
+                    const interchangeDetails = interchangeParts[1];
+                    document.getElementById('preview-metro-info').textContent = `Double Transfer: ${lineSequence} (${interchangeDetails})`;
+                } else {
+                    document.getElementById('preview-metro-info').textContent = `Double Transfer: ${route.interchange}`;
+                }
+            } else if (route.transfer_count === 1) {
+                document.getElementById('preview-metro-info').textContent = `Single Transfer at ${route.interchange} (${route.initial_line} → ${route.dest_line})`;
+            } else {
+                document.getElementById('preview-metro-info').textContent = `Different Lines (${route.initial_line} → ${route.dest_line})`;
+            }
+
+            // Update Access Leg 2
+            const leg2Icon = route.leg2_mode === 'walking' ? '🚶' : '🚗';
+            const leg2ModeText = route.leg2_mode === 'walking' ? 'Walking' : 'Taxi';
+            document.getElementById('preview-taxi2-distance').textContent = route.leg2_distance.toFixed(1);
+            document.getElementById('preview-taxi2-cost').textContent = `₹${leg2Cost}`;
+            document.getElementById('preview-taxi2-time').textContent = `${route.leg2_time} min`;
+            document.getElementById('preview-taxi2-route').textContent = `${route.destination} → ${destAddress} ${leg2Icon}`;
+
+            // Update booking button
+            document.getElementById('preview-book-metro-btn').textContent = `🎫 Book Metro @ ₹${metroCost}`;
+
+            // Show modal
+            document.getElementById('preview-modal').style.display = 'block';
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').style.display = 'none';
+        }
+
+        // Helper functions for cost calculations
+        function calculateTaxiCost(distanceKm) {
+            // Base fare ₹10 + ₹10 per km
+            return Math.round(10 + (distanceKm * 10));
+        }
+
+        function calculateMetroCost(distanceKm) {
+            // Bengaluru Metro fare structure
+            if (distanceKm <= 2) return 10;
+            else if (distanceKm <= 4) return 15;
+            else if (distanceKm <= 6) return 20;
+            else if (distanceKm <= 9) return 25;
+            else if (distanceKm <= 12) return 30;
+            else if (distanceKm <= 15) return 35;
+            else if (distanceKm <= 18) return 40;
+            else if (distanceKm <= 21) return 45;
+            else if (distanceKm <= 24) return 50;
+            else return 55;
+        }
+
+        // Initialize page when loaded
+        window.addEventListener('load', function () {
+            const resultsSection = document.getElementById('results-section');
+            if (resultsSection) {
+                resultsSection.classList.remove('show');
+            }
+
+            // Check if Google Maps API is loaded
+            if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                initAutocomplete();
+            } else {
+                console.warn('Google Maps API not loaded. Autocomplete will not work.');
+                // Add a note to the user
+                const inputs = document.querySelectorAll('#initial-address, #dest-address');
+                inputs.forEach(input => {
+                    input.placeholder = 'Enter address manually (autocomplete not available)';
+                });
+            }
+
+            // Add click outside modal to close functionality
+            const modal = document.getElementById('preview-modal');
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closePreview();
+                }
+            });
+
+            // Add escape key to close modal
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closePreview();
+                }
+            });
+        });
+    </script>
+
+    <!-- Google Maps API with Places library -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=places&callback=initAutocomplete">
+        </script>
+</body>
+
+</html>

@@ -1,0 +1,33 @@
+# Core Web Framework
+Flask==2.3.3
+
+# HTTP Requests for Google Maps API
+requests==2.31.0
+
+# Data Processing
+pandas==2.0.3
+
+# Environment Variables Management
+python-dotenv==1.0.0
+
+# CORS Support for Web API
+Flask-CORS==4.0.0
+
+# Concurrent Processing for Parallel API Calls
+concurrent-futures==3.1.1
+
+# JSON Handling
+jsonschema==4.19.1
+
+# Date and Time Utilities
+python-dateutil==2.8.2
+
+# Mathematical Operations
+numpy==1.24.3
+
+# Production Web Server
+gunicorn==21.2.0
+
+# Development and Testing (Optional)
+# pytest==7.4.0
+# pytest-cov==4.1.0
