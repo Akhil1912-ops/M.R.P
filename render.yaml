@@ -6,7 +6,7 @@ services:
     startCommand: gunicorn bengaluru_app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11
+        value: 3.11.9
       - key: GOOGLE_MAPS_API_KEY
         sync: false  # You'll need to set this in Render dashboard
 
