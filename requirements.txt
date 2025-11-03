@@ -14,7 +14,7 @@ python-dotenv==1.0.0
 Flask-CORS==4.0.0
 
 # Concurrent Processing for Parallel API Calls
-concurrent-futures==3.1.1
+# Note: concurrent.futures is built into Python 3.2+, no package needed
 
 # JSON Handling
 jsonschema==4.19.1
