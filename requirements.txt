@@ -28,6 +28,10 @@ numpy==1.24.3
 # Production Web Server
 gunicorn==21.2.0
 
+# Build Dependencies (Required for package installation)
+setuptools>=65.0.0
+wheel>=0.40.0
+
 # Development and Testing (Optional)
 # pytest==7.4.0
 # pytest-cov==4.1.0
